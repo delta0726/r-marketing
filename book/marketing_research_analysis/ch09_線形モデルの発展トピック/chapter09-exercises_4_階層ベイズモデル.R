@@ -4,7 +4,7 @@
 # Objective : TODO
 # Created by: Owner
 # Created on: 2021/03/21
-# Page      : P327 - P328
+# Page      :
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
 # ***********************************************************************************************
 
