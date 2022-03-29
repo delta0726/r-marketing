@@ -33,7 +33,7 @@ conflict_prefer("select", "dplyr")
 
 
 # データ準備
-sales.data.raw <- read_csv("book/marketing_research_analysis/data/chapter9-sales.csv")
+sales.data.raw <- read_csv("data/chapter9-sales.csv")
 
 # データ確認
 sales.data.raw %>% print()

@@ -48,7 +48,7 @@ conflict_prefer("select", "dplyr")
 
 
 # データ準備
-sat.df <- read_csv("book/marketing_research_analysis/data/rintro-chapter7.csv")
+sat.df <- read_csv("data/rintro-chapter7.csv")
 
 # データ確認
 sat.df %>% print()

@@ -51,7 +51,7 @@ library(conflicted)
 
 
 # データ準備
-prst1 <- read_csv("book/marketing_research_analysis/data/chapter8-brands1.csv")
+prst1 <- read_csv("data/chapter8-brands1.csv")
 
 
 # 1 基本統計量の算出 ---------------------------------------------------------------------

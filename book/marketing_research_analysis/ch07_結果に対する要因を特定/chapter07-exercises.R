@@ -47,7 +47,7 @@ conflict_prefer("filter", "dplyr")
 # データ準備
 # --- ホテルデータ
 # --- 顧客満足度調査への回答とホテル滞在に関する基本的な会計情報
-hotel.df <- read_csv("book/marketing_research_analysis/data/hotelsat-data.csv")
+hotel.df <- read_csv("data/hotelsat-data.csv")
 
 # データ変換
 # --- 1で同様の操作あり

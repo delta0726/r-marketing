@@ -60,7 +60,7 @@ conflict_prefer("select", "dplyr")
 
 
 # データ準備
-brand.ratings <- read_csv("book/marketing_research_analysis/data/brand.rating.csv")
+brand.ratings <- read_csv("data/brand.rating.csv")
 
 # データ確認
 brand.ratings %>% print()

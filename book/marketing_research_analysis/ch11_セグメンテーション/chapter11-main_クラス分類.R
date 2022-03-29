@@ -45,7 +45,7 @@ conflict_prefer("map", "purrr")
 # データ準備
 # --- セグメンテーションデータ
 seg.raw <-
-  read_csv("book/marketing_research_analysis/data/seg_raw.csv") %>%
+  read_csv("data/seg_raw.csv") %>%
     mutate_if(is.character, as.factor)
 
 

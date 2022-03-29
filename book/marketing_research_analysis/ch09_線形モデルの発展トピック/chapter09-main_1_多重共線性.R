@@ -41,7 +41,7 @@ conflict_prefer("select", "dplyr")
 
 # データ準備
 # --- Y：オンライン支出
-cust.df <- read_csv("book/marketing_research_analysis/data/cust.df.csv")
+cust.df <- read_csv("data/cust.df.csv")
 
 # データ概要
 cust.df %>% print()

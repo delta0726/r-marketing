@@ -39,7 +39,7 @@ conflict_prefer("select", "dplyr")
 
 # データ準備
 # --- 遊園地のシーズンパスを購入するかどうか
-pass.df <- read_csv("book/marketing_research_analysis/data/pass_df.csv")
+pass.df <- read_csv("data/pass_df.csv")
 
 # データ加工
 pass.df <-

@@ -54,7 +54,7 @@ seg.summ <- function(data, groups) {
 
 # データ準備
 # --- セグメンテーションデータ
-seg.raw <- read_csv("book/marketing_research_analysis/data/seg_raw.csv")
+seg.raw <- read_csv("data/seg_raw.csv")
 
 
 # 1 データ加工 ----------------------------------------------------------------------------
