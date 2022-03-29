@@ -1,8 +1,6 @@
 # ***********************************************************************************************
 # Title     : Rによる実践的マーケティングリサーチと分析
 # Chapter   : 8 データの複雑さを低減する（メイン）
-# Objective : TODO
-# Created by: Owner
 # Created on: 2021/02/22
 # Page      : P237 - P271
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
@@ -17,6 +15,7 @@
 # ＜アルゴリズム＞
 # 1 主成分分析：
 #   - 互いに相関が無く、分散が最大となるような主成分を順次構成していく
+#   - 元の変数による次元解釈が困難
 #
 # 2 因子分析
 #   - 主成分分析と同様に少ない次元で分散を捉えるが、元の変数によって次元解釈が可能
@@ -27,7 +26,7 @@
 
 # ＜目次＞
 # 0 準備
-# 1 データの相関関係
+# 1 データ加工と相関分析
 # 2 ヒートマップによるブランド評価
 # 3 主成分分析の基礎
 # 4 ブランド評価とPCA
@@ -63,73 +62,92 @@ conflict_prefer("select", "dplyr")
 brand.ratings <- read_csv("data/brand.rating.csv")
 
 # データ確認
-brand.ratings %>% print()
+# --- 各列が1-10のスコアになっている
+# --- 10: 最もそう思う場合
+# ---  1: そう思わない場合
+brand.ratings %>% as_tibble()
 brand.ratings %>% glimpse()
 
 # データサマリー
 # --- 各項目を1-10で表している
-brand.ratings %>% summary()
+brand.ratings %>% describe()
 brand.ratings %>% map(table)
+
+
+# 1 データ加工と相関分析 ---------------------------------------------------------------------
+
+# ＜ポイント＞
+# - 評価項目ごとのスコアの相関関係を確認する
+#   --- この時点ではブランドごとの評価の違いは見ていない
+
 
 # データ変換
 # --- Zスコア変換
 brand.sc <-
   brand.ratings %>%
-    mutate_at(1:9, function(x) (x - mean(x)) / sd(x)) %>%
+    mutate_if(is.numeric, function(x) (x - mean(x)) / sd(x)) %>%
     as_tibble()
 
 # 確認
 brand.sc %>% print()
-brand.sc %>% summary()
-
-
-# 1 データの相関関係 -----------------------------------------------------------------------
+brand.sc %>% describe()
 
 # 相関プロット
 # --- 階層クラスタリングで並び替え
 brand.sc %>%
   select(1:9) %>%
   cor() %>%
-  corrplot(order = "hclust")
+  corrplot(order = "hclust", addCoef.col = 'black', tl.pos = 'd')
 
 
 # 2 ヒートマップによるブランド評価 ------------------------------------------------------------
 
-# ブランドごとの評価
-# --- 平均値
-brand.mean <- aggregate(. ~ brand, data = brand.sc, mean)
-brand.mean
+# ＜ポイント＞
+# - 評価項目ごとのブランドの評価がどのようになっているかを確認する
+#   --- スコアの平均値で評価する
+#   --- 視覚的に理解するために平均値をヒートマップで表現する
 
-# ブランド名を列名に変換
+
+# ブランドごとの評価
+# --- グループ別の平均スコア
 brand.mean <-
-  brand.mean %>%
-    column_to_rownames("brand")
+  brand.sc %>%
+    group_by(brand) %>%
+    summarise_if(is.numeric, mean) %>%
+    ungroup()
 
 # 確認
 brand.mean %>% print()
 
 # ヒートマップ
-# --- ブランド属性
+# --- ブランドごとの評価項目
+# --- 同じような評価を受けているカテゴリを視覚的に理解
 brand.mean %>%
+  select(is.numeric) %>%
   as.matrix() %>%
+  set_rownames(brand.mean$brand) %>%
   heatmap.2(col = brewer.pal(9, "GnBu"), trace = "none", key = FALSE,
             dend = "none", main = "\n\n\n\n\nBrand attributes")
 
 
-
 # 3 主成分分析の基礎 ----------------------------------------------------------------------
 
-# データ作成
-set.seed(98286)
-xvar <- 1:10 %>% sample(100, replace = TRUE)
-yvar <- xvar
-yvar[sample(1:length(yvar), 50)] <- 1:10 %>% sample( 50, replace=TRUE)
-zvar <- yvar
-zvar[sample(1:length(zvar), 50)] <- 1:10 %>% sample( 50, replace=TRUE)
-my.vars <- cbind(xvar, yvar, zvar)
+# ＜ポイント＞
+# - 主成分分析は元のデータセットを分散最大化の観点でPC1をとり、以降は前のPCに直交して成分を抽出する
+#   --- 主成分間の相関はゼロとなる
+#   --- 主成分スコアと固有値に分解される
+#   --- 主成分負荷量(因子負荷量)とは主成分得点と観測変数との相関係数（-1から1の値を取る）
+
+# ＜参考資料＞
+# 主成分分析 - 統計科学研究所
+# https://statistics.co.jp/reference/software_R/statR_9_principal.pdf
+
+
+# データ準備
+my.vars2 <- read_csv("data/chap8_pca_samle.csv")
 
 # 散布図
-# --- jitter()で元データにノイズを加える
+# --- jitter()で元データにノイズを加える（プロットの重なりを回避）
 my.vars %>% jitter() %>% plot(yvar ~ xvar, data = .)
 
 # 相関係数
@@ -140,24 +158,34 @@ my.pca <- my.vars %>% prcomp()
 
 # 確認
 my.pca %>% summary()
-my.pca %>% glimpse()
+my.pca %>% listviewer::reactjson(collapsed = TRUE)
 
 # 相関係数
 # --- 主成分の相関はゼロ
-my.pca$x %>% cor()
+my.pca$x %>% cor() %>% round(5)
 
 # バイプロット
+# --- PC1とPC2で関係性を表現
+# --- 主成分は無相関化されているため２次元の表現に適している
 my.pca %>% biplot(scale = TRUE)
 
 
 # 4 ブランド評価とPCA ----------------------------------------------------------------------
 
+# ＜ポイント＞
+# - 主成分分析を適用することで元の特徴量と別の観点からデータセットの特性を知ることができる
+# - ここでは、元のブランドデータにPCAを適用する
+#   --- ブランドごとの平均化したデータに対するPCAではない点に注意
+#   --- 主成分のイメージは掴めるが、ブランドとの関係性は記述できない
+
+
 # PCAの実行
-brand.pc <- brand.sc %>% select(1:9) %>% prcomp()
+# --- 元のブランドデータ
+brand.pc <- brand.sc %>% select_if(is.numeric) %>% prcomp()
 
 # 確認
 brand.pc %>% print()
-brand.pc %>% summary()
+brand.pc %>% listviewer::reactjson(collapsed = TRUE)
 
 # スクリープロット
 # --- PCごとの主成分寄与度を示す
@@ -171,16 +199,31 @@ brand.pc %>% biplot()
 
 # 5 PCAと知覚マップ ----------------------------------------------------------------------
 
+# ＜ポイント＞
+# - カテゴリごとに平均化したデータに対してPCAを適用すると知覚マップを得ることができる
+#   --- 平均値を使うことでデータ構造を見誤らないことを確認する必要がある
+#   --- バイプロットで主成分とカテゴリ平均値との関係が理解しやすくなる
+
+# ＜知覚マップの注意事項＞
+# - 1 集計レベルや集計方法を慎重に選ぶ必要がある
+#     --- 全データで作成したバイプロットと知覚マップが類似した傾向であることを確認
+# - 2 知覚マップはデータ間の相対関係を示すので、データが追加されるとポジショニングが変わる可能性がある
+#     --- データをサンプル抽出するなどするとロバスト性を高めることができる
+# - 3 マップ上の矢印との相対的な位置関係でブランド評価することはできない
+#     --- PC1とPC2の水準で評価することができる（PCの解釈ができないことが多い）
+#     --- 初見の人はブランド(数字)と矢印を結びつけようとするが、それぞれは安定しないため独立して解釈すべき
+
 # データ確認
 # --- ブランドごとの評価平均
 brand.mean %>% print()
 
 # PCAの実行
-brand.mu.pc <- brand.mean %>% prcomp(scale = TRUE)
+brand.mu.pc <- brand.mean %>% select_if(is.numeric) %>% prcomp(scale = TRUE)
 
 # 確認
 brand.mu.pc %>% print()
 brand.mu.pc %>% summary()
+brand.mu.pc %>% listviewer::reactjson(collapsed = TRUE)
 
 # スクリープロット
 # --- 集計前と同一イメージ
@@ -192,10 +235,11 @@ brand.mu.pc %>% biplot(main = "Brand positioning", cex = c(1.5, 1))
 
 # ブランド比較
 # --- eが平均的なブランド
-brand.mean["c", ] - brand.mean["e", ]
-
-# ブランド比較
-colMeans(brand.mean[c("b", "c", "f", "g"), ]) - brand.mean["e", ]
+# --- 各ブランドとeの差を取ることで特性を数量化しやすくすることが可能
+# --- 仮にeのような中心近くのサンプルが無くてもPCの絶対値で評価してもよい
+c <- brand.mean %>% column_to_rownames("brand") %>% .["c", ]
+e <- brand.mean %>% column_to_rownames("brand") %>% .["e", ]
+c - e
 
 
 # 6 探索的因子分析の概要 -------------------------------------------------------------------
