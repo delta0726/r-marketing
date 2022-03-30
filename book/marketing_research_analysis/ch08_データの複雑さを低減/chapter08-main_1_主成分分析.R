@@ -1,8 +1,8 @@
 # ***********************************************************************************************
 # Title     : Rによる実践的マーケティングリサーチと分析
-# Chapter   : 8 データの複雑さを低減する（メイン）
+# Chapter   : 8 データの複雑さを低減する（メイン1 主成分分析）
 # Created on: 2021/02/22
-# Page      : P237 - P271
+# Page      : P237 - P254
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
 # ***********************************************************************************************
 
@@ -31,9 +31,6 @@
 # 3 主成分分析の基礎
 # 4 ブランド評価とPCA
 # 5 PCAと知覚マップ
-# 6 探索的因子分析の概要
-# 7 因子軸の回転
-# 8 多次元尺度法
 
 
 # 0 準備 ---------------------------------------------------------------------------------
@@ -44,14 +41,15 @@ library(magrittr)
 library(corrplot)
 library(gplots)
 library(RColorBrewer)
+library(psych)
 library(nFactors)
-library(GPArotation)
-library(gplots)
-library(RColorBrewer)
-library(semPlot)
-library(cluster)
-library(MASS)
 library(conflicted)
+#library(GPArotation)
+#library(gplots)
+#library(RColorBrewer)
+#library(semPlot)
+#library(cluster)
+#library(MASS)
 
 
 # コンフリクト解消
@@ -144,11 +142,11 @@ brand.mean %>%
 
 
 # データ準備
-my.vars2 <- read_csv("data/chap8_pca_samle.csv")
+my.vars <- read_csv("data/chap8_pca_samle.csv")
 
 # 散布図
 # --- jitter()で元データにノイズを加える（プロットの重なりを回避）
-my.vars %>% jitter() %>% plot(yvar ~ xvar, data = .)
+my.vars %>% as.matrix() %>% jitter() %>% plot(yvar ~ xvar, data = .)
 
 # 相関係数
 my.vars %>% cor()
@@ -241,132 +239,3 @@ c <- brand.mean %>% column_to_rownames("brand") %>% .["c", ]
 e <- brand.mean %>% column_to_rownames("brand") %>% .["e", ]
 c - e
 
-
-# 6 探索的因子分析の概要 -------------------------------------------------------------------
-
-# 因子数のイメージ確認
-# --- 固有値から求める
-brand.sc %>%
-  select(1:9) %>%
-  cor() %>%
-  eigen() %>%
-  use_series(values) %>%
-  nScree()
-
-# 因子数のイメージ確認
-# --- 固有値の水準から求める
-# --- 1以上が有効な因子
-brand.sc %>%
-  select(1:9) %>%
-  cor() %>%
-  eigen() %>%
-  use_series(values)
-
-# 因子分析の実行
-brand.fa.2 <- brand.sc %>% select(1:9) %>% factanal(factors = 2)
-brand.fa.3 <- brand.sc %>% select(1:9) %>% factanal(factors = 3)
-
-# 確認
-brand.fa.2 %>% print()
-brand.fa.3 %>% print()
-
-# ヒートマップの作成
-brand.fa.3$loadings %>%
-  heatmap.2(col = brewer.pal(9, "Greens"), trace="none", key=FALSE,
-            dend="none", Colv=FALSE, cexCol = 1.2,
-            main="\n\n\n\n\nFactor loadings for brand adjectives")
-
-
-# 7 因子軸の回転 -------------------------------------------------------------------------
-
-# 因子軸の回転
-brand.fa.ob <-
-  brand.sc %>%
-    select(1:9) %>%
-    factanal(factors=3, rotation="oblimin")
-
-# ヒートマップの作成
-brand.fa.ob$loadings %>%
-  heatmap.2(col = brewer.pal(9, "Greens"), trace = "none",
-            key = FALSE, dend = "none", Colv = FALSE, cexCol = 1.2,
-            main = "\n\n\n\n\nFactor loadings for brand adjectives")
-
-
-# plot the structure
-brand.fa.ob %>%
-  semPaths(what = "est", residuals = FALSE, cut = 0.3,
-           posCol = c("white", "darkgreen"), negCol = c("white", "red"),
-           edge.label.cex = 0.75, nCharNodes = 7)
-
-
-# use regression scores
-
-brand.fa.ob <-
-  brand.sc %>%
-    select(1:9) %>%
-    factanal(factors = 3, rotation = "oblimin", scores = "Bartlett")
-
-
-
-brand.scores <- brand.fa.ob$scores %>% data.frame()
-
-brand.scores$brand <- brand.sc$brand
-brand.scores %>% head()
-
-brand.fa.mean <-
-  aggregate(. ~ brand, data = brand.scores, mean) %>%
-    column_to_rownames("brand") %>%
-    set_colnames(c("Leader", "Value", "Latest"))
-
-brand.fa.mean
-
-
-brand.fa.mean %>%
-  as.matrix() %>%
-  heatmap.2(col = brewer.pal(9, "GnBu"), trace = "none",
-            key = FALSE, dend = "none", cexCol = 1.2,
-            main = "\n\n\n\n\nMean factor score by brand")
-
-
-# 8 多次元尺度法 -------------------------------------------------------------------------
-
-# 距離行列
-brand.dist <- brand.mean %>% dist()
-
-# MDS
-brand.mds <- brand.dist %>% cmdscale()
-
-# 確認
-brand.mds %>% print()
-
-# プロット
-brand.mds %>% plot(type = "n")
-brand.mds %>% text(rownames(brand.mds), cex = 2)
-
-
-# non-metric MDS alternative 
-brand.rank <- brand.mean %>% lapply(function(x) ordered(rank(x))) %>% data.frame()
-
-# データ確認
-brand.rank %>% print()
-brand.rank %>% glimpse()
-
-brand.dist.r <- brand.rank %>% daisy(metric = "gower")
-brand.dist.r
-
-brand.mds.r <- brand.dist.r %>% isoMDS()
-brand.mds.r
-
-brand.mds.r$points %>% plot(type = "n")
-brand.mds.r$points %>% text(levels(brand.sc$brand), cex = 2)
-
-
-# the following is NOT in the book
-# same general solution as PCA, but with clustering instead 
-# this is a preview of the segmentation chapter
-# solving for k=3 clusters, these are the closest-related brands
-
-brand.dist %>%
-  fanny(k = 3) %>%
-  clusplot(color = FALSE, shade = FALSE, labels = 3, lines = 0,
-           plotchar = FALSE, main="Brand perception groups")
