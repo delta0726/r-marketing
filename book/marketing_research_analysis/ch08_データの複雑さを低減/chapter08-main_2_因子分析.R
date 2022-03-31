@@ -1,6 +1,6 @@
 # ***********************************************************************************************
 # Title     : Rによる実践的マーケティングリサーチと分析
-# Chapter   : 8 データの複雑さを低減する（メイン）
+# Chapter   : 8 データの複雑さを低減する（因子分析）
 # Created on: 2021/03/31
 # Page      : P254 - P265
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html

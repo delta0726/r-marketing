@@ -1,6 +1,6 @@
 # ***********************************************************************************************
 # Title     : Rによる実践的マーケティングリサーチと分析
-# Chapter   : 8 データの複雑さを低減する（メイン1 主成分分析）
+# Chapter   : 8 データの複雑さを低減する（主成分分析）
 # Created on: 2021/02/22
 # Page      : P237 - P254
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
