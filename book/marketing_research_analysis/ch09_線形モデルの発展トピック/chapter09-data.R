@@ -2,7 +2,6 @@
 # Title     : Rによる実践的マーケティングリサーチと分析
 # Chapter   : 9 線形モデルの発展的トピックス（データ作成）
 # Objective : 階層線形モデル / 階層ベイズ
-# Created by: Owner
 # Created on: 2021/02/22
 # Page      : P298 - P299
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
