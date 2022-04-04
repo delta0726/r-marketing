@@ -155,6 +155,11 @@ seg.hc <-
     daisy(metric = "gower") %>%
     hclust(method = "complete")
 
+# データ確認
+seg.hc %>% print()
+seg.hc %>% summary()
+seg.hc %>% listviewer::reactjson(collapsed = TRUE)
+
 # デンドログラム作成
 seg.hc %>% plot()
 
