@@ -1,7 +1,7 @@
 # ***********************************************************************************************
 # Title     : Rによる実践的マーケティングリサーチと分析
 # Chapter   : 11 セグメンテーション：クラスタリングと分類（メイン）
-# Objective : クラスタリング
+# Objective : クラスタリング（階層クラスタリング）
 # Created on: 2022/04/05
 # Page      : P376 - P386
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
