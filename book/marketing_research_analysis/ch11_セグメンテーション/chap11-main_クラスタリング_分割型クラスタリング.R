@@ -38,7 +38,6 @@
 library(tidyverse)
 library(magrittr)
 library(cluster)
-library(psych)
 library(conflicted)
 
 # コンフリクト解消
@@ -62,6 +61,11 @@ seg.raw %>% glimpse()
 
 
 # データ加工
+seg.df  <-
+  seg.raw %>%
+    select(-Segment)
+
+# データ変換
 # --- カテゴリカル変数を数値に変換
 # --- 2値カテゴリを0/1に変換するのが最適というわけではない
 seg.df.num <-

@@ -41,7 +41,6 @@
 library(tidyverse)
 library(magrittr)
 library(cluster)
-library(psych)
 library(conflicted)
 
 # コンフリクト解消

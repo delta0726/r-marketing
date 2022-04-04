@@ -39,7 +39,6 @@ library(tidyverse)
 library(magrittr)
 library(cluster)
 library(mclust)
-library(psych)
 library(conflicted)
 
 # コンフリクト解消
@@ -65,6 +64,11 @@ seg.raw %>% glimpse()
 
 
 # データ加工
+seg.df  <-
+  seg.raw %>%
+    select(-Segment)
+
+# データ変換
 # --- カテゴリカル変数を数値に変換
 # --- 2値カテゴリを0/1に変換するのが最適というわけではない
 seg.df.num <-
@@ -120,6 +124,12 @@ seg.df.num %>% mclustBIC()
 # - 通常のクラスタ分析と同様に特徴量分布の分離の程度で評価することも可能
 #   --- k-meansと比べると分離度合いが小さい
 
+
+# 関数定義
+# --- 平均集計（数値データのみ）
+seg.summ <- function(data, groups) {
+  aggregate(data, list(groups), function(x) mean(as.numeric(x)))
+}
 
 # データ集計
 seg.df %>% seg.summ(seg.mc$class)
