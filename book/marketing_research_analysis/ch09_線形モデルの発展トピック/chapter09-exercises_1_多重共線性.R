@@ -1,8 +1,7 @@
 # ***********************************************************************************************
 # Title     : Rによる実践的マーケティングリサーチと分析
 # Chapter   : 9 線形モデルの発展的トピックス（エクササイズ）
-# Objective : 多重共線性
-# Created by: Owner
+# Objective : 強い相関を持つ変数の扱い（多重共線性）
 # Created on: 2021/03/11
 # Page      : P325 - P326
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
