@@ -86,10 +86,18 @@ seg.df.cut %>% summary()
 
 # 2 潜在クラス分析の実行 -------------------------------------------------------------------
 
+# 参考：with文
+with(iris, Sepal.Width + Petal.Width)
+iris$Sepal.Width + iris$Petal.Width
+
+
 # フォーミュラ設定
 # --- 1のみを切片に持つフォーミュラ
 seg.f <- seg.df.cut %>% with(cbind(age, gender, income, kids, ownHome, subscribe)~1)
-seg.f
+
+# 確認
+seg.f %>% print()
+seg.f %>% class()
 
 # モデル構築
 set.seed(02807)
@@ -104,7 +112,11 @@ seg.LCA3 %>% listviewer::reactjson(collapsed = TRUE)
 
 # 3 ベイズ情報量基準(BIC)による評価 -----------------------------------------------------------
 
-# ベイズ情報量基準(BIC)の確認
+# ＜ポイント＞
+# - LCA3(2298.767) LCA4(2330.043) とLCA3の方が32低くフィッティングが良くなっている
+
+
+# BICの確認
 seg.LCA4$bic
 seg.LCA3$bic
 
@@ -124,10 +136,10 @@ seg.summ <- function(data, groups) {
 
 
 # データ集計
-seg.df %>% seg.summ(seg.LCA3$predclass)
-seg.df %>% seg.summ(seg.LCA4$predclass)
+seg.df.cut %>% seg.summ(seg.LCA3$predclass)
+seg.df.cut %>% seg.summ(seg.LCA4$predclass)
 
-# カテゴリごとのサンプル数を確認
+# カテゴリごとのサンプル数
 seg.LCA3$predclass %>% table()
 seg.LCA4$predclass %>% table()
 
@@ -138,6 +150,10 @@ boxplot(seg.df$kids ~ seg.LCA3$predclass, ylab = "Kids", xlab = "Cluster")
 
 
 # 5 クラスタリングのプロット ------------------------------------------------------------------
+
+# ＜ポイント＞
+# - LCA4の場合はPC1とPC2の2次元でみると要素が混在するクラスタが中央に確認される
+
 
 # プロット
 seg.df %>%
@@ -151,22 +167,41 @@ seg.df %>%
 
 # 6 潜在クラス分析の解の比較 -------------------------------------------------------------------
 
-# 分割表の作成
-# --- 見やすいが主観的判断となる
-table(seg.LCA3$predclass, seg.LCA4$predclass)
+# ＜ポイント＞
+# - 2つのクラスタリング結果を比較する場合は適切なツールを用いて行う必要がある
+# - mclust::mapClass()
+#   --- 2つのクラスタリングの結果の全ての対応関係を調べて一致度が最大のものを抽出
+# - mclust::adjustedRandIndex()
+#   --- mapClassと同様の処理を観測値がランダムに割り当てられた場合の確率を差し引いた一致度を計算（調整ランド指数）
 
-# 定量的な比較
-# --- モデル結果
-mapClass(seg.LCA3$predclass, seg.LCA4$predclass)
+
+# クラス分類
+seg.LCA3$predclass %>% table()
+seg.LCA4$predclass %>% table()
+
+# 分割表による一致確認
+# --- LCA3-3 & LCA4-1 / LCA3-2 & LCA4-2 あたりがペアか？
+# --- 見やすいが主観的判断となる
+seg.LCA3$predclass %>% table(seg.LCA4$predclass)
+
+# クラスタのマップ比較
+# --- 2つのクラスタベクトルの対応関係をリストで表現
+comp1 <- seg.LCA3$predclass %>% mapClass(seg.LCA4$predclass)
+comp1 %>% listviewer::reactjson()
+
+# クラスタの一致度
+# --- 調整ランド指数
 seg.LCA3$predclass %>% adjustedRandIndex(seg.LCA4$predclass)
 
-# 定量的な比較
-# --- ランダムデータ（ベンチマーク）
+
+# ランダムデータとの比較
+# --- 調整ランド指数のベンチマーク
+# --- 調整ランド指数は概ねゼロ
 set.seed(11021)
 random.data <- sample(4, length(seg.LCA4$predclass), replace=TRUE)
 random.data %>% adjustedRandIndex(seg.LCA4$predclass)
 
 
-# compare to known segments
-table(seg.raw$Segment, seg.LCA4$predclass)
+# 正解ラベルとの比較
+seg.raw$Segment %>% table(seg.LCA4$predclass)
 adjustedRandIndex(seg.raw$Segment, seg.LCA4$predclass)
