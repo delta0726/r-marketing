@@ -1,7 +1,7 @@
 # ***********************************************************************************************
 # Title   : Rによる実践的マーケティングリサーチと分析
 # Chapter : 10 確認的因子分析と構造方程式モデル（メイン）
-# Theme   : シミュレーションデータ生成
+# Theme   : シミュレーションデータ生成（piesSimData）
 # Date    : 2022/4/5
 # Page    : P336 - P340
 # URL     : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
