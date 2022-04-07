@@ -30,16 +30,17 @@ library(semPlot)
 library(car)
 library(psych)
 library(ggcorrplot)
+library(conflicted)
 
 conflict_prefer("some", "car", quiet = TRUE)
 conflict_prefer("logit", "car", quiet = TRUE)
-
+conflict_prefer("some", "car", quiet = TRUE)
 
 # データロード
-piesSimData <- read_csv("data/satSimData.csv")
+satSimData <- read_csv("data/satSimData.csv")
 
 # データ確認
-piesSimData %>% print()
+satSimData %>% print()
 
 
 # 1 EDAプロセス ------------------------------------------------------------------
@@ -54,7 +55,7 @@ piesSimData %>% print()
 
 
 # 基本統計量
-piesSimData %>% describe()
+satSimData %>% describe()
 
 # 相関分析
 satSimData %>%
