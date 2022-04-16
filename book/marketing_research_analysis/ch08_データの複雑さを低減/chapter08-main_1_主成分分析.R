@@ -20,7 +20,7 @@
 # 2 因子分析
 #   - 主成分分析と同様に少ない次元で分散を捉えるが、元の変数によって次元解釈が可能
 #
-# 3 多次元尺度構成法
+# 3 多次元尺度構成法(MDS)
 #   - 観測値の類似度を2次元プロットのような低次元空間に射影
 
 
@@ -44,12 +44,6 @@ library(RColorBrewer)
 library(psych)
 library(nFactors)
 library(conflicted)
-#library(GPArotation)
-#library(gplots)
-#library(RColorBrewer)
-#library(semPlot)
-#library(cluster)
-#library(MASS)
 
 
 # コンフリクト解消
@@ -60,7 +54,7 @@ conflict_prefer("select", "dplyr")
 brand.ratings <- read_csv("data/brand.rating.csv")
 
 # データ確認
-# --- 各列が1-10のスコアになっている
+# --- 各列が1-10のスコアになっている（順序カテゴリカルデータ）
 # --- 10: 最もそう思う場合
 # ---  1: そう思わない場合
 brand.ratings %>% as_tibble()
@@ -102,7 +96,7 @@ brand.sc %>%
 
 # ＜ポイント＞
 # - 評価項目ごとのブランドの評価がどのようになっているかを確認する
-#   --- スコアの平均値で評価する
+#   --- ブランドでグルーピングしてスコアの平均値で評価する（行方向の次元圧縮）
 #   --- 視覚的に理解するために平均値をヒートマップで表現する
 
 
@@ -156,7 +150,6 @@ my.pca <- my.vars %>% prcomp()
 
 # 確認
 my.pca %>% summary()
-my.pca %>% listviewer::reactjson(collapsed = TRUE)
 
 # 相関係数
 # --- 主成分の相関はゼロ
@@ -172,9 +165,9 @@ my.pca %>% biplot(scale = TRUE)
 
 # ＜ポイント＞
 # - 主成分分析を適用することで元の特徴量と別の観点からデータセットの特性を知ることができる
-# - ここでは、元のブランドデータにPCAを適用する
+# - 元のブランドデータにPCAをそのまま適用する
 #   --- ブランドごとの平均化したデータに対するPCAではない点に注意
-#   --- 主成分のイメージは掴めるが、ブランドとの関係性は記述できない
+#   --- 主成分のイメージは掴めるが、ブランドとの関係性は記述できない（グループ集計した知覚マップを検討）
 
 
 # PCAの実行
@@ -183,7 +176,6 @@ brand.pc <- brand.sc %>% select_if(is.numeric) %>% prcomp()
 
 # 確認
 brand.pc %>% print()
-brand.pc %>% listviewer::reactjson(collapsed = TRUE)
 
 # スクリープロット
 # --- PCごとの主成分寄与度を示す
@@ -211,6 +203,7 @@ brand.pc %>% biplot()
 #     --- PC1とPC2の水準で評価することができる（PCの解釈ができないことが多い）
 #     --- 初見の人はブランド(数字)と矢印を結びつけようとするが、それぞれは安定しないため独立して解釈すべき
 
+
 # データ確認
 # --- ブランドごとの評価平均
 brand.mean %>% print()
@@ -221,7 +214,6 @@ brand.mu.pc <- brand.mean %>% select_if(is.numeric) %>% prcomp(scale = TRUE)
 # 確認
 brand.mu.pc %>% print()
 brand.mu.pc %>% summary()
-brand.mu.pc %>% listviewer::reactjson(collapsed = TRUE)
 
 # スクリープロット
 # --- 集計前と同一イメージ
@@ -238,4 +230,3 @@ brand.mu.pc %>% biplot(main = "Brand positioning", cex = c(1.5, 1))
 c <- brand.mean %>% column_to_rownames("brand") %>% .["c", ]
 e <- brand.mean %>% column_to_rownames("brand") %>% .["e", ]
 c - e
-
