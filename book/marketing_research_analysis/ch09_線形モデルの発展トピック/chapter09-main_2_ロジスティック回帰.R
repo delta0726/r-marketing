@@ -2,24 +2,26 @@
 # Title     : Rによる実践的マーケティングリサーチと分析
 # Chapter   : 9 線形モデルの発展的トピックス（メイン）
 # Objective : ロジスティック回帰
-# Created by: Owner
-# Created on: 2021/02/22
+# Created on: 2022/04/27
 # Page      : P282 - P295
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
 # ***********************************************************************************************
 
 
 # ＜概要＞
-
+# - 2値データを目的変数とするモデルはロジスティック回帰でアプローチする
+#   --- 結果の予測確率を予測変数の指数関数と関連付ける
+#   --- 予測確率として0-1の範囲で出力され、予測確率の水準に応じて2値分類を行う
 
 
 # ＜目次＞
 # 0 準備
-# 1 基礎知識
-# 2 売上データの作成
-# 3 モデル構築(モデル1)
-# 4 モデル構築(モデル2)
-# 5 モデル構築(モデル3)
+# 1 データ確認
+# 2 ロジスティックの計算
+# 3 最も単純なモデル
+# 4 モデル再考
+# 5 変数を追加したモデル
+# 6 交互効果を考慮したモデル
 
 
 # 0 準備 ---------------------------------------------------------------------------------
@@ -29,6 +31,7 @@ library(tidyverse)
 library(broom)
 library(psych)
 library(car)
+library(vcd)
 library(vcdExtra)
 library(conflicted)
 
@@ -46,6 +49,9 @@ pass.df <-
   pass.df %>%
     mutate(Promo = factor(Promo, levels = c("NoBundle", "Bundle")))
 
+
+# 1 データ確認 --------------------------------------------------------------------------
+
 # データ概要
 pass.df %>% print()
 pass.df %>% glimpse()
@@ -54,7 +60,7 @@ pass.df %>% glimpse()
 pass.df %>% summary()
 
 
-# 1 基礎知識 ----------------------------------------------------------------------------
+# 2 ロジスティックの計算 -------------------------------------------------------------------
 
 # ロジスティックの計算
 # --- 手動計算
@@ -77,68 +83,52 @@ log(0.88 / (1 - 0.88))
 qlogis(0.88)
 
 
+# 3 最も単純なモデル ---------------------------------------------------------------------
 
-# 2 売上データの作成 ----------------------------------------------------------------------
+# ＜ポイント＞
+# - ロジスティック回帰モデルは線形回帰モデルと同様の手順で一般化線形モデル(GLM)として推定される
+#   --- 目的変数は正規分布である必要はない（2値分類でも問題ない）
+#   --- GLMはリンク関数を使用して正規分布に従う説明変数を正規分布しない目的変数に関連付ける
 
-# テーブル作成
-# --- 売上データ
-pass.tab <- c(242, 639, 38, 359, 284, 27, 449, 223, 83, 278, 49, 485)
-dim(pass.tab) <- c(3, 2, 2)
-class(pass.tab) <- "table"
-dimnames(pass.tab) <- list(Channel=c("Mail", "Park", "Email"),
-                           Promo=c("Bundle", "NoBundle"),
-                           Pass=c("YesPass", "NoPass") )
-# データ確認
-pass.tab %>% print()
-
-# テーブルをデータフレームに変換
-pass.df <-
-  pass.tab %>%
-    expand.dft() %>%
-    mutate(Promo = factor(Promo, levels = c("NoBundle", "Bundle")))
-
-# データ確認
-pass.df %>% glimpse()
-
-# 混合行列
-table(pass.df$Pass, pass.df$Promo)
-
-
-# 3 モデル構築(モデル1) ----------------------------------------------------------------------
 
 # モデル構築
+# --- 2値分類は二項分布が適切（確率分布にbinomialを指定する）
 pass.m1 <- glm(Pass ~ Promo, data = pass.df, family = binomial)
 
 # サマリー
+# --- PromoBundleの回帰係数の0.389
+pass.m1 %>% glance()
 pass.m1 %>% tidy()
 
-# 回帰係数
-# --- salesのオッズ比
+# オッズ比
+# --- PromoBundleのオッズ比は1.475（販売促進があれば購入確率は1.475倍になる）
 pass.m1 %>% coef() %>% exp()
 
 # 信頼区間
 pass.m1 %>% confint() %>% exp()
 
+
+# 4 モデル再考 ---------------------------------------------------------------------------------
+
+# ＜ポイント＞
+# - 販売促進の有無に関わらず、シーズンパスが最も売れているのは園内販売となっている
+#   --- 販売チャネルごとに売れ行きが異なることが確認できる（Channelをモデルに追加する必要がある）
+
+
 # 混合行列
 table(pass.df$Pass, pass.df$Channel)
 
-
-# visualization
-   # install if needed
-
+# モザイクプロットの作成
+# --- 分割表の確認はモザイクプロットが分かりやすい
 pass.df %>% table() %>% doubledecker()
 
 
-# 参考：オッズ比の算出
+# 5 変数を追加したモデル ----------------------------------------------------------------------
 
-# how the coef translates to an odds ratio
-plogis(0.3888)                          # outcome %
-plogis(0.3888) / (1-plogis(0.3888))     # ratio of outcome % to alternative %
-exp(0.3888)                             # identical
+# ＜ポイント＞
+# - モデル再考の知見によりChannelをモデルに追加する
+#   --- プロモーションをすると売上が減少するという矛盾が発生する（シンプソンのパラドックス）
 
-
-
-# 4 モデル構築(モデル2) ----------------------------------------------------------------------
 
 # モデル構築
 pass.m2 <- glm(Pass ~ Promo + Channel, data = pass.df, family = binomial)
@@ -151,62 +141,23 @@ pass.m2 %>% tidy()
 pass.m2 %>% coef() %>% exp()
 
 # 信頼区間
+# --- プロモーションをすると0.47-0.68倍となる
+# --- 公園内だと30-56倍になる
 pass.m2 %>% confint() %>% exp()
 
 
-# 5 モデル構築(モデル3) ----------------------------------------------------------------------
+# 6 交互効果を考慮したモデル -----------------------------------------------------------------
 
-# Model 3: add the interaction of promotion and channel
-pass.m3 <- glm(Pass ~ Promo + Channel + Promo:Channel,
-               data = pass.df, family = binomial)
+# ＜ポイント＞
+# - プロモーションをすると売上が減少するという矛盾を除くため交互効果を導入してみる
+
+
+# モデル構築
+pass.m3 <- glm(Pass ~ Promo + Channel + Promo:Channel, data = pass.df, family = binomial)
 
 # サマリー
+# --- 各係数がプラス係数になった一方、交互効果がマイナス係数となった
 pass.m3 %>% tidy()
 
 # 信頼区間
 pass.m3 %>% confint() %>% exp()
-
-
-
-##########################################################
-####
-#### ==> this section is NOT in the book
-#### extras on visualization for logistic coefficients
-
-# plot the coefs
-
-
-pass.m2 %>%
-  coefplot(intercept = FALSE, outerCI = 1.96, lwdOuter = 1.5,
-           title = "Coefficients for Season Pass by Factor", ylab = "Factor")
-
-#### plot the odds ratio confidence intervals
-####
-pass.ci <- pass.m2 %>% confint() %>% data.frame()     # coef confidence intervals
-pass.ci$X50 <- coef(pass.m2)                # add the midpoint estimate
-
-# plot odds
-
-pass.ci$Factor <- rownames(pass.ci)           # for ggplot2 to use in its model
-pass.ci
-
-# ggplot of odds ratios
-# first: a plot by factor (x=) of the midpoint (y), high (ymax) and low (ymin)
-p <- ggplot(pass.ci[-1, ],
-            aes(x=Factor, y=exp(X50), ymax=exp(X97.5..), ymin=exp(X2.5..)))
-
-# ... displaying those elements as points & error bars
-p <- p + geom_point(size=4) + geom_errorbar(width=0.25)
-
-# ... adding a vertical line at an odds ratio of 1.0 (no change)
-p <- p + geom_hline(yintercept=1, linetype="dotted", size=1.5, color="red")
-
-# now plot it with titles
-p + ylab("Likehood by Factor (odds ratio, main effect)") +
-  ggtitle(paste("95% CI: Card sign up odds by factor")) + coord_flip()
-
-
-### exercise for reader ==> NOT in book
-### does this add anything to our interpretation? Intercept model
-pass.m3 <- glm(Pass ~ Promo * Channel, data=pass.df, family=binomial)
-summary(pass.m3)
