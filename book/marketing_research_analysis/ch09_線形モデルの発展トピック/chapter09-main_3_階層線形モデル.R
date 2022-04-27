@@ -2,8 +2,7 @@
 # Title     : Rによる実践的マーケティングリサーチと分析
 # Chapter   : 9 線形モデルの発展的トピックス（メイン）
 # Objective : 階層線形モデル
-# Created by: Owner
-# Created on: 2021/02/22
+# Created on: 2022/04/28
 # Page      : P295 - P307
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
 # ***********************************************************************************************
@@ -14,6 +13,7 @@
 #   --- 母集団レベルの効果を｢固定効果｣といい、｢個体レベルの効果｣を｢ランダム効果｣という
 #   --- 全体を推定した後に個体を推定している
 #   --- 個体ごとに複数回の測定を行っている必要がある
+#   --- {lme4}を使って階層線形モデルにアプローチする
 
 
 # ＜発展＞
@@ -48,7 +48,7 @@ conflict_prefer("extract", "magrittr")
 
 # データ準備
 # --- ジェットコースター16種類に対する200人のアンケート（3200レコード）
-conjoint.df <- read_csv("book/marketing_research_analysis/data/conjoint_df.csv")
+conjoint.df <- read_csv("data/conjoint_df.csv")
 
 # データ加工
 conjoint.df <-
@@ -56,36 +56,45 @@ conjoint.df <-
     mutate(speed = factor(speed),
            height = factor(height))
 
-# データ概要
+
+# 1 データ確認 ----------------------------------------------------------------------------
+
+# データ確認
 # --- カテゴリカルjデータのみで構成されている（前処理不要）
 conjoint.df %>% print()
 conjoint.df %>% glimpse()
 conjoint.df %>% map(table)
-
-
-# 1 データ確認 ----------------------------------------------------------------------------
 
 # サマリー
 conjoint.df %>% summary()
 
 # データ集計
 # --- 高さごとのレーティング
-# --- 中間的な高さで評価が高まるようだ
+# --- 中間的な高さで評価が高まる
 conjoint.df %>%
   group_by(height) %>%
   summarise(rating = mean(rating)) %>%
   ungroup()
 
+# データ集計
+# --- スピードごとのレーティング
+# --- スピードが速いほど評価が高まる
 conjoint.df %>%
   group_by(speed) %>%
   summarise(rating = mean(rating)) %>%
   ungroup()
 
+# データ集計
+# --- 素材ごとのレーティング
+# --- 素材の違いに大差はない
 conjoint.df %>%
   group_by(const) %>%
   summarise(rating = mean(rating)) %>%
   ungroup()
 
+# データ集計
+# --- テーマごとのレーティング
+# --- テーマの違いに大差はない
 conjoint.df %>%
   group_by(theme) %>%
   summarise(rating = mean(rating)) %>%
@@ -108,13 +117,12 @@ conjoint.df %>%
 
 # 線形モデルの構築
 # --- Y：rating
-ride.lm <- conjoint.df %>% lm(rating ~ speed + height + const + theme, data = .)
-
-# サマリー
-ride.lm %>% summary()
+ride.lm <- lm(rating ~ speed + height + const + theme, data = conjoint.df)
 
 # 回帰係数
-# --- speed70, height300, theme: dragon が有意となっている
+# --- いずれもt値は非常に高い
+# --- speed70, height300, theme: dragon が特に有意となっている
+ride.lm %>% summary()
 ride.lm %>% tidy()
 
 
@@ -132,15 +140,10 @@ ride.lm %>% tidy()
 # 階層線形モデルの構築
 # --- 定数項のみを階層化する（定数項は1で指定）
 # --- グループはresp.id（個人を特定）
-ride.hlm1 <-
-  conjoint.df %>% lmer(rating ~ speed + height + const + theme + (1 | resp.id), data = .)
+ride.hlm1 <- lmer(rating ~ speed + height + const + theme + (1 | resp.id), data = conjoint.df)
 
 # サマリー
 ride.hlm1 %>% summary()
-
-# 回帰係数
-# --- 固定効果はlm()で出力した結果と同じ
-ride.hlm1 %>% tidy()
 
 # 固定効果
 # --- (Intercept)のみが固定効果
@@ -151,7 +154,7 @@ ride.hlm1 %>% fixef()
 ride.hlm1 %>% ranef() %>% use_series(resp.id) %>% as_tibble()
 
 # 個人効果
-# --- 今回は定数項のみ
+# --- 今回は定数項のみが個人ごとに異なる
 # --- グループ化したレベルごとに出力（resp.id）
 ride.hlm1 %>% coef() %>% use_series(resp.id) %>% as_tibble()
 
@@ -159,15 +162,19 @@ ride.hlm1 %>% coef() %>% use_series(resp.id) %>% as_tibble()
 # --- 個人ごとの定数項（全体の定数項(固定効果)をランダム効果で調整）
 # --- 固定効果 + ランダム効果
 fixed_effect <- ride.hlm1 %>% fixef() %>% extract("(Intercept)")
-random_effect <- ride.hlm1 %>% ranef()  %>% use_series(resp.id)
-(fixed_effect + random_effect) %>% head()
+random_effect <- ride.hlm1 %>% ranef() %>% use_series(resp.id) %>% .[,1]
+
+# 効果合計
+tibble(fixed_effect = fixed_effect,
+       random_effect = random_effect) %>%
+  mutate(total_effect = fixed_effect + random_effect)
 
 
 # 4 完全な階層線形モデル --------------------------------------------------------------------------
 
 # ＜ポイント＞
-# - 一般的なリサーチでは全ての回帰係数に対してランダム効果を推定する
-#   --- 定数項モデルよりもはるかに計算量増えるので、コントロール変数を調整して高速化
+# - 一般的なリサーチでは全ての回帰係数に対してランダム効果を推定するのがセオリー
+#   --- 切片のみの階層モデルよりもはるかに複雑（コントロール変数を調整して高速化）
 
 
 # モデル構築
@@ -180,10 +187,8 @@ ride.hlm2 <-
                              optimizer = "Nelder_Mead"))
 
 # サマリー
+# --- 全ての変数でランダム効果が計算されている
 ride.hlm2 %>% summary()
-
-# 回帰係数
-ride.hlm2 %>% tidy()
 
 # 固定効果
 # --- 全ての項目が固定効果
@@ -209,4 +214,3 @@ coef(ride.hlm2)$resp.id[196, ]
 se.ranef(ride.hlm2)$resp.id %>% as_tibble()
 ranef(ride.hlm2)$resp.id[196, ] - 1.96 * se.ranef(ride.hlm2)$resp.id[1,]
 ranef(ride.hlm2)$resp.id[196, ] + 1.96 * se.ranef(ride.hlm2)$resp.id[1,]
-
