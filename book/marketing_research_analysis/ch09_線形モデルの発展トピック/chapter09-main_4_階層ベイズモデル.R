@@ -2,8 +2,7 @@
 # Title     : Rによる実践的マーケティングリサーチと分析
 # Chapter   : 9 線形モデルの発展的トピックス（メイン）
 # Objective : 階層ベイズモデル
-# Created by: Owner
-# Created on: 2021/02/22
+# Created on: 2022/04/27
 # Page      : P307 - P315
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
 # ***********************************************************************************************
@@ -40,7 +39,7 @@ conflict_prefer("select", "dplyr")
 
 # データ準備
 # --- ジェットコースター16種類に対する200人のアンケート（3200レコード）
-conjoint.df <- read_csv("book/marketing_research_analysis/data/conjoint_df.csv")
+conjoint.df <- read_csv("data/conjoint_df.csv")
 
 # データ加工
 conjoint.df <-
@@ -57,7 +56,7 @@ conjoint.df %>% glimpse()
 
 # ＜ポイント＞
 # - ベイズ線形モデルを用いてデータ全体でモデリングする
-#   --- 非階層モデルとして推定
+#   --- 非階層モデルとして推定（基本的な推定手順が機能しているかを確認）
 
 
 # モデル構築
@@ -70,7 +69,8 @@ ride.mc1 <- conjoint.df %>% MCMCregress(rating ~ speed + height + const + theme,
 ride.mc1 %>% summary()
 ride.mc1 %>% tidy()
 
-# 参考：線形回帰モデル
+# ＜参考＞
+# 通常の線形回帰モデル（同じ結果となる）
 ride.lm <- conjoint.df %>% lm(rating ~ speed + height + const + theme, data = .)
 ride.lm %>% tidy()
 
@@ -90,8 +90,8 @@ ride.lm %>% tidy()
 
 
 # ＜引数：MCMChregress＞
-# fixed  ：全ての回答者で同一の上位レベルの固定効果を表すformula
-# random ：回答者ごとに推定される段田無効化を表すformula
+# fixed  ：全ての回答者で同一の上位レベルの固定効果を表すフォーミュラ
+# random ：回答者ごとに推定される段田無効化を表すフォーミュラ
 # group  ：ランダム効果をグループ化するためのカテゴリ情報
 # data   ：観測値のデータフレーム
 # r      ：モデルのパラメータ数
@@ -113,4 +113,3 @@ ride.mc2$mcmc %>% dim()
 
 # 個別データの確認
 ride.mc2$mcmc[ ,1:8] %>% summary()
-
