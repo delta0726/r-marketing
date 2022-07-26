@@ -2,19 +2,20 @@
 # Title     : Rによる実践的マーケティングリサーチと分析
 # Chapter   : 12 マーケットバスケット分析とアソシエーションルール
 # Theme     : 4 非トランザクションデータのルール（セグメントの再探索）
-# Created on: 2021/04/13
+# Created on: 2022/07/27
 # Page      : P447 - P452
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
 # ***********************************************************************************************
 
 
 # ＜概要＞
-# - 消費者セグメンテーションを調べる方法としてアソシエーションルールを使用する
+# - アソシエーションルールはデータフレーム形式のデータにも適用することができる
+#   --- 消費者セグメンテーションを調べる方法としてアソシエーションルールを使用する
 
 
 # ＜目次＞
 # 0 準備
-# 1 データ加工
+# 1 連続データの離散化
 # 2 トランザクションデータへの変換
 # 3 アソシエーションルールの適用
 # 4 ルールの可視化
@@ -36,16 +37,23 @@ conflict_prefer("some", "car", quiet = TRUE)
 
 # データロード
 seg.fac.raw <- read_csv("data/seg_df.csv")
-seg.fac.raw %>% summary()
+
+# 確認
+seg.fac.raw %>% print()
+seg.fac.raw %>% glimpse()
 
 
-# 1 データ加工 --------------------------------------------------------------------------
+# 1 連続データの離散化 ----------------------------------------------------------------------
 
 # ＜ポイント＞
-# - アソシエーションルールは離散データに対して動作するためデータ変換を行う
+# - アソシエーションルールは離散データに対して動作するため、連続データの離散化を行う
 
 
-# データ加工
+# サマリー
+# --- 連続データを含む列が存在する
+seg.fac.raw %>% summary()
+
+# 連続データの離散化
 seg.fac <-
   seg.fac.raw %>%
     mutate(age = cut(age,
@@ -59,26 +67,41 @@ seg.fac <-
            kids = cut(kids,
                       breaks = c(0, 1, 2, 3, 100),
                       labels = c("No kids", "1 kid", "2 kids", "3+ kids"),
-                      right = FALSE, ordered_result = TRUE))
+                      right = FALSE, ordered_result = TRUE)) %>%
+    mutate_if(is.character, as.factor)
 
 # 確認
 seg.fac %>% print()
-seg.fac %>% summary()
+seg.fac %>% glimpse()
 
+# サマリー
+seg.fac %>% summary()
 
 
 # 2 トランザクションデータへの変換 ---------------------------------------------------------
 
 # ＜ポイント＞
 # - カテゴリカルデータのみのデータフレームはトランザクションデータに変換することができる
+#   --- レコード数は｢transaction｣に対応
+#   --- 総カテゴリ数は｢items｣に対応
 
+
+# データ全体のカテゴリ数
+# --- レコード数：300
+# --- 総カテゴリ数：22
+seg.fac %>% nrow()
+seg.fac %>% unlist() %>% unique() %>% length()
 
 # トランザクションデータへの変換
+# --- 300 transactions (rows) and
+# --- 22 items (columns)
 seg.trans <- seg.fac %>% as( "transactions")
 
 # 確認
 seg.trans %>% print()
 seg.trans %>% summary()
+
+# オブジェクト構造
 seg.trans %>% listviewer::reactjson(collapsed = TRUE)
 
 
@@ -94,7 +117,10 @@ seg.rules <-
     apriori(parameter = list(support = 0.1, conf = 0.4, target = "rules"))
 
 # 確認
+seg.rules %>% print()
 seg.rules %>% summary()
+
+# オブジェクト構造
 seg.rules %>% listviewer::reactjson(collapsed = TRUE)
 
 
@@ -102,7 +128,7 @@ seg.rules %>% listviewer::reactjson(collapsed = TRUE)
 
 # プロット
 # --- 全体像
-seg.rules %>% plot(interactive = TRUE)
+seg.rules %>% plot(interactive = TRUE, engine = "plotly")
 
 # 上位ルールの抽出
 seg.hi <- seg.rules %>% sort(by = "lift") %>% head(35)
