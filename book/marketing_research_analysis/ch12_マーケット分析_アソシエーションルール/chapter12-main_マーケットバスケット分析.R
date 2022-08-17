@@ -2,7 +2,7 @@
 # Title     : Rによる実践的マーケティングリサーチと分析
 # Chapter   : 12 マーケットバスケット分析とアソシエーションルール
 # Theme     : 2 マーケットバスケット分析
-# Created on: 2022/07/26
+# Created on: 2022/08/18
 # Page      : P428 - P446
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
 # ***********************************************************************************************
@@ -51,11 +51,12 @@ retail.raw <- readLines("data/retail.dat")
 
 # ＜ポイント＞
 # - サンプルデータであるGroceriesを用いてアソシエーション分析を行う
+#   --- 同時購入された商品リスト(マーケットバスケット)で交際されるデータセット
 
 
 # データ確認
 # --- transactionsという独自オブジェクト
-# --- 9835個のトランザクションと169個のユニークアイテム
+# --- 9835個のトランザクションと169個のユニークアイテム（itemInfoに格納）
 Groceries %>% class()
 Groceries %>% summary()
 Groceries %>% listviewer::reactjson(collapsed = TRUE)

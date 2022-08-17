@@ -2,7 +2,7 @@
 # Title     : Rによる実践的マーケティングリサーチと分析
 # Chapter   : 13 選択モデル
 # Theme     : 選択モデルの推定
-# Created on: 2021/04/09
+# Created on: 2022/07/27
 # Page      : P465 - P480
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
 # ***********************************************************************************************
@@ -11,7 +11,6 @@
 # ＜概要＞
 # - 選択モデルは製品の属性が顧客の商品選択にどのような影響を与えるかを理解するために使われる
 # - 最も一般的なのは多項ロジットモデルで頻度統計では{mlogit}が用いられる
-
 
 
 # ＜目次＞
@@ -33,6 +32,7 @@ library(tidyverse)
 library(magrittr)
 library(mlogit)
 library(dfidx)
+library(broom)
 library(conflicted)
 
 conflict_prefer("select", "dplyr", quiet = TRUE)
@@ -42,6 +42,7 @@ conflict_prefer("select", "dplyr", quiet = TRUE)
 cbc.df <- read_csv("data/cbc_df.csv")
 
 # データ加工
+# --- ファクターに変換
 cbc.df <-
   cbc.df %>%
     mutate(eng = factor(eng, levels = c("gas", "hyb", "elec")),
@@ -69,18 +70,19 @@ cbc.df %>%
 xtabs(choice ~ price, data = cbc.df)
 xtabs(choice ~ cargo, data = cbc.df)
 
-# ピボットテーブル
-# --- 検証用
-cbc.df %>% rpivotTable::rpivotTable()
+# 参考：テーブル集計
+cbc.df %>% select(choice, price) %>% table()
+cbc.df %>% select(choice, cargo) %>% table()
 
 
 # 2 モデルデータの作成 --------------------------------------------------------------------
 
 # ＜ポイント＞
-# - mlogit()は選択モデルとして最も基本的でよく使用される多項ロジットモデル(条件付ロジットモデル)を推定する
+# - 全ての列がファクターのデータフレームdfidxオブジェクトにを作成する
 
 
 # データ変換
+# --- {mlogit}のバージョンが1.1以上であればdfidxを使う
 cbc.mlogit <-
   cbc.df %>%
     mutate(chid = rep(1:(nrow(.) / 3), each = 3)) %>%
@@ -89,10 +91,18 @@ cbc.mlogit <-
 
 # クラス確認
 cbc.mlogit %>% class()
+
+# データ確認
 cbc.mlogit %>% print()
+cbc.mlogit
 
 
 # 3 モデル構築 --------------------------------------------------------------------
+
+# ＜ポイント＞
+# - 多項ロジットモデルは選択モデルで最も基本的かつ使用頻度が高い（{mlogit}で提供されている）
+#   --- 大規模モデルで高速化が必要な場合は{mnlogit}
+
 
 # 学習
 # --- モデル1：定数項なしモデル
@@ -126,7 +136,7 @@ cbc.mlogit2 <-
   cbc.mlogit %>%
     mutate(price = as.numeric(as.character(price)))
 
-# 学習
+# モデル構築
 m3 <- mlogit(choice ~ 0 + seat + cargo + eng + price, data = cbc.mlogit2)
 
 # 確認
@@ -174,8 +184,11 @@ new.data <-
     expand.grid() %>%
     slice(8, 1, 3, 41, 49, 26)
 
+new.data.num <-
+  new.data %>%
+    mutate(price = as.numeric(as.character(price)))
 
-m3 %>% predict.mnl(new.data)
+m3 %>% predict.mnl(new.data.num)
 m1 %>% predict.mnl(new.data)
 
 

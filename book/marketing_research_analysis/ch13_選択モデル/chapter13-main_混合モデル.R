@@ -2,7 +2,7 @@
 # Title     : Rによる実践的マーケティングリサーチと分析
 # Chapter   : 13 選択モデル
 # Theme     : 選択モデルへの消費者の異質性の追加（混合モデル）
-# Created on: 2021/04/10
+# Created on: 2022/07/10
 # Page      : P480 - P486
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
 # ***********************************************************************************************
