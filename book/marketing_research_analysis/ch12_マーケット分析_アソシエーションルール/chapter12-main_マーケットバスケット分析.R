@@ -65,8 +65,7 @@ Groceries %>% listviewer::reactjson(collapsed = TRUE)
 Groceries %>% head(3) %>% inspect()
 
 # アソシエーション分析
-# --- 支持度(supp)がトランザクションの1％以上
-# --- 確信度(conf)が0.3以上
+# --- 支持度(supp)がトランザクションの1％以上、確信度(conf)が0.3以上のルールを抽出
 groc.rules <-
   Groceries %>%
     apriori(parameter = list(supp = 0.01, conf = 0.3, target = "rules"))
@@ -77,7 +76,7 @@ groc.rules %>% summary()
 groc.rules %>% listviewer::reactjson(collapsed = TRUE)
 
 # アソシエーション確認
-# --- リフト値が高いパターンを選択
+# --- リフト値が高いパターンを抽出
 groc.rules %>% subset(lift > 3) %>% inspect()
 
 
@@ -85,14 +84,15 @@ groc.rules %>% subset(lift > 3) %>% inspect()
 
 # ＜ポイント＞
 # - トランザクションデータは購買者ごとの購入商品の組み合わせのデータセット
-# - 以下のようなイメージ
+# - 各人のレシートデータのようなイメージ
 #   --- Aさん{石鹸、水、ガム}
 #   --- Bさん{クッキー、おむつ}
 #   --- Cさん{缶詰、刺身、ビール、食パン}
 
 
 # データ形式
-# --- データの塊ごとに""で区切られている(表示形式によっては改行されている)
+# --- データの塊ごとに""で区切られている(文字列)
+# --- 表示形式によっては改行されている
 retail.raw %>% head()
 retail.raw %>% class()
 retail.raw %>% glimpse()
@@ -124,12 +124,16 @@ retail.list %>% glimpse()
 
 # データ確認
 # --- some()はランダムに指定数のサンプルを取得する
-retail.list %>% some()
+retail.list %>% some(n = 5)
 
 # データ変換
 # --- transactionsオブジェクトはリスト型から作成する
 retail.trans <- retail.list %>% as("transactions")
+
+# データ確認
 retail.trans %>% class()
+retail.trans %>% print()
+retail.trans %>% glimpse()
 
 # サマリー
 # --- 88162 rows (elements/itemsets/transactions) and 16470 columns (items)
@@ -186,9 +190,9 @@ retail.rules %>% plot(interactive = TRUE, engine = "plotly")
 retail.hi <- retail.rules %>% sort(by = "lift") %>% head(50)
 
 # アソシエーション確認
+# --- data.frame表示
+# --- テーブル表示
 retail.hi %>% inspect()
-
-# アソシエーションのテーブル表示
 retail.hi %>% inspectDT()
 
 # ルールの一部を可視化
