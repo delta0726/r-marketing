@@ -2,7 +2,7 @@
 # Title     : Rによる実践的マーケティングリサーチと分析
 # Chapter   : 9 線形モデルの発展的トピックス（メイン）
 # Objective : 階層ベイズモデル
-# Created on: 2022/04/27
+# Created on: 2022/11/25
 # Page      : P307 - P315
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
 # ***********************************************************************************************
@@ -11,7 +11,7 @@
 # ＜概要＞
 # - 階層モデルは{lme4}を用いた古典的な手法でも推定できるが、本来はベイズ推定のほうが適している
 #   --- ベイズ推定は各個体の観測値がほとんどなくても最良の推定値を得ることができる
-#   --- 階層モデルは個人のサンプル数が少なくなる可能性がある
+#   --- 階層モデルは個人のサンプル数が少なくなる可能性がある（細かいグループで正規性が担保されない）
 
 
 # ＜目次＞
@@ -63,16 +63,16 @@ conjoint.df %>% glimpse()
 # --- MCMCpack::MCMCregress()
 set.seed(97439)
 ride.mc1 <- conjoint.df %>% MCMCregress(rating ~ speed + height + const + theme, data = .)
+ride.lm  <- conjoint.df %>% lm(rating ~ speed + height + const + theme, data = .)
 
 # サマリー
-# --- 頻度論の線形回帰モデルとほぼ同じ結果
 ride.mc1 %>% summary()
 ride.mc1 %>% tidy()
 
-# ＜参考＞
-# 通常の線形回帰モデル（同じ結果となる）
-ride.lm <- conjoint.df %>% lm(rating ~ speed + height + const + theme, data = .)
-ride.lm %>% tidy()
+# 回帰係数の比較
+# --- 頻度論の線形回帰モデルとほぼ同じ結果
+ride.mc1 %>% tidy() %>% use_series(estimate)
+ride.lm %>% coef()
 
 
 # 2 MCMCによる階層線形モデル -------------------------------------------------------------------
@@ -99,6 +99,7 @@ ride.lm %>% tidy()
 
 
 # モデル構築
+# --- random引数にはY(rating)を付けない
 set.seed(97439)
 ride.mc2 <-
   conjoint.df %>%
@@ -112,4 +113,5 @@ ride.mc2 %>% glimpse()
 ride.mc2$mcmc %>% dim()
 
 # 個別データの確認
+ride.mc2$mcmc[ ,1:8] %>% head()
 ride.mc2$mcmc[ ,1:8] %>% summary()
