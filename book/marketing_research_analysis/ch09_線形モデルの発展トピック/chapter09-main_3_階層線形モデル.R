@@ -2,7 +2,7 @@
 # Title     : Rによる実践的マーケティングリサーチと分析
 # Chapter   : 9 線形モデルの発展的トピックス（メイン）
 # Objective : 階層線形モデル
-# Created on: 2022/04/28
+# Created on: 2022/11/25
 # Page      : P295 - P307
 # URL       : http://r-marketing.r-forge.r-project.org/Instructor/slides-index.html
 # ***********************************************************************************************
@@ -122,7 +122,6 @@ ride.lm <- lm(rating ~ speed + height + const + theme, data = conjoint.df)
 # 回帰係数
 # --- いずれもt値は非常に高い
 # --- speed70, height300, theme: dragon が特に有意となっている
-ride.lm %>% summary()
 ride.lm %>% tidy()
 
 
@@ -130,6 +129,7 @@ ride.lm %>% tidy()
 
 # ＜ポイント＞
 # - 線形回帰モデルは固定効果のみを持つが、階層線形モデル(HLM)では個人レベルの効果を追加する
+#   --- 各個人に対して定数項のみの変化を許容する
 
 
 # ＜lme4の記法＞
@@ -137,32 +137,40 @@ ride.lm %>% tidy()
 # - ランダム効果(predoctors)とグループ化変数(group)を選ぶ
 
 
+# データ確認
+# --- resp.idは個人を特定する
+conjoint.df %>% head()
+conjoint.df$resp.id %>% unique()
+
 # 階層線形モデルの構築
 # --- 定数項のみを階層化する（定数項は1で指定）
 # --- グループはresp.id（個人を特定）
+# --- (1 | resp.id) と記述する
 ride.hlm1 <- lmer(rating ~ speed + height + const + theme + (1 | resp.id), data = conjoint.df)
 
 # サマリー
 ride.hlm1 %>% summary()
+ride.hlm1 %>% tidy()
 
 # 固定効果
-# --- (Intercept)のみが固定効果
+# --- lmで推定されたものと同様
 ride.hlm1 %>% fixef()
+ride.lm %>% coef()
 
 # ランダム効果（個人ごと）
-# --- 200人分
+# --- (Intercept)のみがランダム効果
 ride.hlm1 %>% ranef() %>% use_series(resp.id) %>% as_tibble()
 
 # 個人効果
-# --- 今回は定数項のみが個人ごとに異なる
-# --- グループ化したレベルごとに出力（resp.id）
+# --- 固定効果とランダム効果を同時に出力
+# --- resp.idごとに切片項のみランダムとなっている
 ride.hlm1 %>% coef() %>% use_series(resp.id) %>% as_tibble()
 
 # 個人効果
 # --- 個人ごとの定数項（全体の定数項(固定効果)をランダム効果で調整）
 # --- 固定効果 + ランダム効果
 fixed_effect <- ride.hlm1 %>% fixef() %>% extract("(Intercept)")
-random_effect <- ride.hlm1 %>% ranef() %>% use_series(resp.id) %>% .[,1]
+random_effect <- ride.hlm1 %>% ranef() %>% use_series(resp.id) %>% extract("(Intercept)")
 
 # 効果合計
 tibble(fixed_effect = fixed_effect,
@@ -190,9 +198,11 @@ ride.hlm2 <-
 # --- 全ての変数でランダム効果が計算されている
 ride.hlm2 %>% summary()
 
+
 # 固定効果
-# --- 全ての項目が固定効果
+# --- lmで推定されたものと同様
 ride.hlm2 %>% fixef()
+ride.lm %>% coef()
 
 # 個人のランダム効果
 # --- グループ化したレベルごとに出力（resp.id）
